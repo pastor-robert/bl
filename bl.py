@@ -86,7 +86,10 @@ def create_booklet(input_path: str, centerfold_path: str|None, output_path: str)
     if centerfold_path:
         with open(centerfold_path, 'rb') as centerfold_file:
             pdf_reader = PdfReader(centerfold_file)
+            angle = 90
             for page in pdf_reader.pages:
+                page.rotate(angle)
+                angle *= -1
                 pdf_writer.add_page(page)
 
     # Save the booklet
