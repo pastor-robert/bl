@@ -2,7 +2,6 @@
 
 import argparse
 from pypdf import PdfReader, PdfWriter, PageObject
-from reportlab.pdfgen import canvas
 
 
 def page_two_up(left: PageObject, right: PageObject) -> PageObject:
@@ -53,7 +52,16 @@ def page_two_up(left: PageObject, right: PageObject) -> PageObject:
 
 def create_booklet(input_path: str, centerfold_path: str|None, output_path: str) -> None:
     """
-    Converts a PDF document into booklet form.
+    Converts a PDF document into booklet form. The resulting PDF will 
+    contain half the number of pages as the input document, each page twice the size
+    of the input pages. E.g., a 4-page 5.5x8.5 input document will result
+    in a 2-page 8.5x11 booklet. When printed in flip-on-short-edge mode, the booklet
+    made be folded in half to create a 5.5x8.5 booklet.
+
+    If you have, say, a 6-page input document, you may add a centerfold. The centerfold
+    will be added to the booklet after the first half of the input document, and before
+    the second half. The centerfold must be the same size as the output document, i.e. 
+    twice the size of the input document.
 
     Args:
         input_path (str): The path to the input PDF document.
@@ -62,6 +70,8 @@ def create_booklet(input_path: str, centerfold_path: str|None, output_path: str)
 
     Raises:
         FileNotFoundError: If the input file does not exist.
+        AssertionError: If the input file has an odd number of pages.
+        AssertionError: If the input file has variable page sizes.
     """
     # Create a new PDF writer
     pdf_writer = PdfWriter()
@@ -71,8 +81,7 @@ def create_booklet(input_path: str, centerfold_path: str|None, output_path: str)
         pdf_reader = PdfReader(input_file)
         total_pages = len(pdf_reader.pages)
 
-        assert total_pages % 2 == 0
-
+        assert total_pages % 2 == 0, "The input PDF must have an even number of pages"
 
         for i in range(0, total_pages//2, 2):
             page = page_two_up(pdf_reader.pages[total_pages - i - 1], pdf_reader.pages[i])
@@ -98,6 +107,16 @@ def create_booklet(input_path: str, centerfold_path: str|None, output_path: str)
 
 
 if __name__ == '__main__':
+    """
+    Usage: bl [-h] [-c CENTERFOLD] input_file output_file
+
+    Convert a PDF document into booklet form. The resulting PDF will contain half the number
+    of pages as the input document, each page twice the size of the input pages.
+    E.g., a 4-page 5.5x8.5 input document will result in a 2-page 8.5x11 booklet.
+    When printed in flip-on-short-edge mode, the booklet made be folded in half to
+    create a 5.5x8.5 booklet.
+    """
+
     parser = argparse.ArgumentParser(description='Convert a PDF document into booklet form.')
     parser.add_argument('-c', '--centerfold', help="Add FILE as a centerfold")
     parser.add_argument('input_file', help='Path to the input PDF document')
